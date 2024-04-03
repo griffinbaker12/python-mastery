@@ -47,6 +47,11 @@ class Stock:
             raise ValueError("shares must be >= 0")
         self._shares = value
 
+    # @shares.deleter
+    # def shares(self):
+    #     # delete
+    #     del self._shares
+
     @property
     def price(self):
         return self._price
@@ -56,7 +61,7 @@ class Stock:
         if not isinstance(value, self._types[2]):
             raise TypeError(f"Expected a {self._types[2].__name__}")
         if value < 0:
-            raise ValueError("price must be >= 0")
+            raise ValueError("Price must be >= 0")
         self._price = value
 
     @property
@@ -73,6 +78,9 @@ class Stock:
         else:
             self.shares -= vol
             return f"Sold {vol} shares"
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}('{self.name}', {self.shares}, {self.price})"
 
 
 # types can easily be changed in a subclass
@@ -136,3 +144,61 @@ def printer(fns, v, headers):
 def print_portfolio(p, headers=None):
     fns = [_print_headers, _print_seps, _print_portfolio]
     printer(fns, p, headers)
+
+
+def print_table(records, fields, formatter):
+    formatter.headings(fields)
+    for r in records:
+        rowdata = [getattr(r, fieldname) for fieldname in fields]
+        formatter.row(rowdata)
+
+
+class TableFormatter:
+    def headings(self, headers):
+        raise NotImplementedError()
+
+    def row(self, rowdata):
+        raise NotImplementedError()
+
+
+class TextTableFormatter(TableFormatter):
+    def headings(self, headers):
+        print(" ".join("%10s" % h for h in headers))
+        print(("-" * 10 + " ") * len(headers))
+
+    def row(self, rowdata):
+        print(" ".join("%10s" % d for d in rowdata))
+
+
+class CSVTableFormatter(TableFormatter):
+    def headings(self, headers):
+        print(",".join("%s" % h for h in headers))
+
+    def row(self, rowdata):
+        print(",".join("%s" % d for d in rowdata))
+
+
+class HTMLTableFormatter(TableFormatter):
+    def headings(self, headers):
+        print(
+            "<tr>" + " " + " ".join("<th>%s</th>" % h for h in headers) + " " + "</tr>"
+        )
+
+    def row(self, rowdata):
+        print(
+            "<tr>" + " " + " ".join("<td>%s</td>" % d for d in rowdata) + " " + "</tr>"
+        )
+
+
+str_to_formatter_map = {
+    "text": TextTableFormatter,
+    "csv": CSVTableFormatter,
+    "html": HTMLTableFormatter,
+}
+
+
+def create_formatter(type):
+    if type in str_to_formatter_map:
+        AttributeError("Please provide a valid key: 'html', 'csv', or 'html'")
+
+    return str_to_formatter_map[type]()
