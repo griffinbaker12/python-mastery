@@ -1,4 +1,5 @@
 import csv
+import sys
 from decimal import Decimal
 
 COL_LEN = 10
@@ -82,6 +83,13 @@ class Stock:
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.name}', {self.shares}, {self.price})"
 
+    def __eq__(self, other):
+        return isinstance(other, Stock) and (self.name, self.shares, self.price) == (
+            other.name,
+            other.shares,
+            other.price,
+        )
+
 
 # types can easily be changed in a subclass
 class DStock(Stock):
@@ -153,6 +161,9 @@ def print_table(records, fields, formatter):
         formatter.row(rowdata)
 
 
+# would be really cool to allow for writing to a different output file
+
+
 class TableFormatter:
     def headings(self, headers):
         raise NotImplementedError()
@@ -202,3 +213,19 @@ def create_formatter(type):
         AttributeError("Please provide a valid key: 'html', 'csv', or 'html'")
 
     return str_to_formatter_map[type]()
+
+
+# makes a temporary patch to sys.stdout to cause all output to redirect to a different file
+class redirect_stdout:
+    # accepts a file object
+    def __init__(self, out_file):
+        self.out_file = out_file
+
+    def __enter__(self):
+        # save the sys.stdout prior to over writing it
+        self.stdout = sys.stdout
+        sys.stdout = self.out_file
+        return self.out_file
+
+    def __exit__(self, ty, val, tb):
+        sys.stdout = self.stdout
