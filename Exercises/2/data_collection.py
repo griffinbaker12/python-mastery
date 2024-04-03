@@ -27,3 +27,20 @@ def read_csv_as_columns(filename, types):
     with open(filename, "r") as file:
         reader = csv.reader(file)
         headers = next(reader)  # Read the first row to use as column headers
+
+        # Initialize the dictionary with headers as keys
+        columns = {header: [] for header in headers}
+
+        for row in reader:
+            for i, value in enumerate(row):
+                try:
+                    # Append the value to the appropriate column after type conversion
+                    columns[headers[i]].append(types[i](value))
+                except ValueError:
+                    # Handle or log conversion error (optional)
+                    print(
+                        f"Warning: Conversion error for '{value}' in column '{headers[i]}'."
+                    )
+
+    print(columns.items())
+    return DataCollection(columns)
