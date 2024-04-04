@@ -1,5 +1,6 @@
 import csv
 import sys
+from abc import ABC, abstractmethod
 from decimal import Decimal
 
 COL_LEN = 10
@@ -155,19 +156,22 @@ def print_portfolio(p, headers=None):
 
 
 def print_table(records, fields, formatter):
+    # no guarantee this works even if it inherits from the proper base blass
+    if not issubclass(type(formatter), TableFormatter):
+        raise TypeError("Expected a table formatter")
+
     formatter.headings(fields)
     for r in records:
         rowdata = [getattr(r, fieldname) for fieldname in fields]
         formatter.row(rowdata)
 
 
-# would be really cool to allow for writing to a different output file
-
-
-class TableFormatter:
+class TableFormatter(ABC):
+    @abstractmethod
     def headings(self, headers):
         raise NotImplementedError()
 
+    @abstractmethod
     def row(self, rowdata):
         raise NotImplementedError()
 
@@ -221,6 +225,7 @@ class redirect_stdout:
     def __init__(self, out_file):
         self.out_file = out_file
 
+    # return the file back to the context manager after we patch
     def __enter__(self):
         # save the sys.stdout prior to over writing it
         self.stdout = sys.stdout
