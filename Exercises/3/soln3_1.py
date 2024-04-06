@@ -213,7 +213,7 @@ str_to_formatter_map = {
 
 
 def create_formatter(type):
-    if type in str_to_formatter_map:
+    if type not in str_to_formatter_map:
         AttributeError("Please provide a valid key: 'html', 'csv', or 'html'")
 
     return str_to_formatter_map[type]()

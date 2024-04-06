@@ -1,6 +1,8 @@
 import csv
 from abc import ABC, abstractmethod
 
+from soln3_1 import TableFormatter, str_to_formatter_map
+
 
 def read_instance_from_row(cls):
     @classmethod
@@ -12,6 +14,17 @@ def read_instance_from_row(cls):
 
     cls.from_row = from_row
     return cls
+
+
+def print_table_with_formats(records, fields, formats, formatter):
+    # no guarantee this works even if it inherits from the proper base blass
+    if not issubclass(type(formatter), TableFormatter):
+        raise TypeError("Expected a table formatter")
+
+    formatter.headings(fields)
+    for r in records:
+        rowdata = [f % getattr(r, fieldname) for f, fieldname in zip(formats, fields)]
+        formatter.row(rowdata)
 
 
 @read_instance_from_row
@@ -125,3 +138,35 @@ def read_csv_as_instances(file, instance):
 def read_csv_as_dicts(file, types):
     parser = DictCSVParser(types)
     return parser.parse(file)
+
+
+# meant to be mixed with a class that provides the required row method
+class ColumnFormatMixin:
+    formats = []
+
+    def row(self, rowdata):
+        rowdata = [(fmt % d) for fmt, d in zip(self.formats, rowdata)]
+        super().row(rowdata)  # type: ignore
+
+
+class UpperHeadersMixin:
+    def headings(self, headers):
+        super().headings([h.upper() for h in headers])  # type: ignore
+
+
+def create_formatter_with_mixins(type, column_formats=None, upper_headers=False):
+    if type not in str_to_formatter_map:
+        RuntimeError("Please provide a valid key: 'html', 'csv', or 'html'")
+    formatter_cls = str_to_formatter_map[type]
+
+    if column_formats:
+
+        class formatter_cls(ColumnFormatMixin, formatter_cls):
+            formats = column_formats
+
+    if upper_headers:
+
+        class formatter_cls(UpperHeadersMixin, formatter_cls):
+            pass
+
+    return formatter_cls()
