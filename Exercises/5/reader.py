@@ -1,33 +1,36 @@
+# the csv class can take any iterable, not just files
 import csv
 
-# the csv class can take any iterable, not just files
+
+def convert_csv(lines, converter, *, headers):
+    """
+    Takes lines and converts them in some way the user specifies
+    """
+    rows = csv.reader(lines)
+    headers = next(rows)
+    return list(map(lambda row: converter(headers, row), rows))
 
 
 def csv_as_dicts(lines, types, *, headers=None):
     """
     Takes lines and reads them as dicts
     """
-    records = []
-    print(headers)
-    rows = csv.reader(lines)
-    if headers is None:
-        headers = next(rows)
-    for row in rows:
-        records.append({name: fn(val) for name, fn, val in zip(headers, types, row)})
-    return records
+    return convert_csv(
+        lines,
+        lambda headers, row: {h: f(v) for h, f, v in zip(headers, types, row)},
+        headers=headers,
+    )
 
 
 def csv_as_instances(lines, cls, *, headers=None):
     """
     Takes lines and returns them as instances
     """
-    records = []
-    rows = csv.reader(lines)
-    if headers is None:
-        headers = next(rows)
-    for row in rows:
-        records.append(cls.from_row(row))
-    return records
+    return convert_csv(
+        lines,
+        lambda _, row: cls.from_row(row),
+        headers=headers,
+    )
 
 
 def read_csv_as_dicts(filename, types, *, headers=None):
